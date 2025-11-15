@@ -71,7 +71,6 @@ upgrades.forEach((u, index) => {
     btn.textContent = `${u.name} - Cost: ${u.currentCost}`;
   }
   
-  // Use 'mousedown' event for a slightly faster response on mobile/desktop clicks
   btn.addEventListener('click', () => buyUpgrade(index));
   div.appendChild(btn);
   upgradeList.appendChild(div);
@@ -80,10 +79,10 @@ upgrades.forEach((u, index) => {
 // Click button handler
 document.getElementById('clickTime').addEventListener('click', () => {
   let gain = clickValue;
-  if(temporalLoop) gain += autoTime; // Apply Temporal Loop bonus
+  if(temporalLoop) gain += autoTime;
   timePoints += gain;
   updateDisplay();
-  **checkButtonCosts(); // <-- FIX: Ensures buttons enable immediately**
+  checkButtonCosts(); // FIX: Ensures buttons enable immediately
 });
 
 
@@ -109,7 +108,7 @@ function buyUpgrade(index) {
     }
     
     updateDisplay();
-    checkButtonCosts(); // Ensure other buttons update if we gained points (Quantum Leap) or reduced points
+    checkButtonCosts(); 
   }
 }
 
@@ -148,11 +147,11 @@ function updateDisplay() {
   document.getElementById('autoTimeDisplay').textContent = Math.floor(autoTime);
 }
 
-// Check which upgrade buttons the player can afford (The usability fix)
+// Check which upgrade buttons the player can afford
 function checkButtonCosts() {
   upgrades.forEach(u => {
     const btn = document.getElementById(`buy-${u.id}`);
-    // Only check and enable/disable if the button exists and is not already a one-time purchase disabled
+    // Only check and enable/disable if the button exists and is not already disabled
     if (btn && !btn.disabled) {
       btn.disabled = timePoints < u.currentCost;
     }
