@@ -5,29 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Time Changer</title>
 <style>
-  body { font-family: Arial, sans-serif; text-align: center; background: #222; color: #fff; }
-  button { font-size: 20px; padding: 10px 20px; margin: 10px; cursor: pointer; }
-  #shop { margin-top: 20px; }
-  .upgrade { margin: 10px 0; }
+  body { font-family: Arial, sans-serif; text-align: center; background: #222; color: #fff; }
+  button { font-size: 18px; padding: 10px 15px; margin: 8px; cursor: pointer; border: none; border-radius: 5px; background: #4CAF50; color: white; }
+  button:disabled { background: #555; cursor: not-allowed; }
+  #shop { margin-top: 30px; border-top: 2px solid #555; padding-top: 15px; }
+  .upgrade { margin: 10px 0; }
+  h1, h2 { margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
 <h1>Time Changer ⏳</h1>
 <p>Time Points: <span id="timePoints">0</span></p>
+<p>Points per click: <span id="clickValueDisplay">1</span></p>
+<p>Auto Time/sec: <span id="autoTimeDisplay">0</span></p>
 <button id="clickTime">Generate Time +1</button>
 
 <div id="shop">
-  <h2>Upgrades</h2>
-  <div class="upgrade">
-    <button id="autoGenerator">Auto Time (+1/sec) - Cost: 50</button>
-  </div>
-  <div class="upgrade">
-    <button id="doubleClick">Double Click (+2 per click) - Cost: 100</button>
-  </div>
-  <div class="upgrade">
-    <button id="timeWarp">Time Warp (+10/sec) - Cost: 500</button>
-  </div>
+  <h2>Upgrades</h2>
+  <div id="upgradeList"></div>
 </div>
 
 <script>
@@ -35,49 +31,135 @@ let timePoints = 0;
 let clickValue = 1;
 let autoTime = 0;
 
-// Update display
-function updateDisplay() {
-  document.getElementById('timePoints').textContent = timePoints;
+// Define upgrades
+const upgrades = [
+  // Stackable Auto Time Upgrades
+  { id: 'auto1', name: "Auto Time (+1/sec)", baseCost: 50, currentCost: 50, isStackable: true, count: 0, effect: () => autoTime += 1 },
+  { id: 'auto10', name: "Time Warp (+10/sec)", baseCost: 500, currentCost: 500, isStackable: true, count: 0, effect: () => autoTime += 10 },
+  { id: 'auto20', name: "Hourglass Booster (+20/sec)", baseCost: 1200, currentCost: 1200, isStackable: true, count: 0, effect: () => autoTime += 20 },
+  { id: 'auto50', name: "Chrono Clock (+50/sec)", baseCost: 2000, currentCost: 2000, isStackable: true, count: 0, effect: () => autoTime += 50 },
+  { id: 'auto100', name: "Time Machine (+100/sec)", baseCost: 3000, currentCost: 3000, isStackable: true, count: 0, effect: () => autoTime += 100 },
+  { id: 'auto500', name: "Eternal Clock (+500/sec)", baseCost: 10000, currentCost: 10000, isStackable: true, count: 0, effect: () => autoTime += 500 },
+
+  // One-Time Click/Multiplier Upgrades
+  { id: 'click5', name: "Temporal Crystal (+5/click)", baseCost: 750, currentCost: 750, isStackable: false, effect: () => clickValue += 5 },
+  { id: 'mult2', name: "Time Multiplier (double all gains)", baseCost: 1500, currentCost: 1500, isStackable: false, effect: () => { clickValue *= 2; autoTime *= 2 } },
+  { id: 'loop', name: "Temporal Loop (click gain = auto/sec)", baseCost: 1800, currentCost: 1800, isStackable: false, effect: () => { temporalLoop = true } },
+  { id: 'mult1.5', name: "Minute Multiplier (+50% auto gains)", baseCost: 1200, currentCost: 1200, isStackable: false, effect: () => { autoTime = Math.floor(autoTime * 1.5) } },
+
+  // One-Time Consumable Upgrades
+  { id: 'leap', name: "Quantum Leap (+500 Time)", baseCost: 800, currentCost: 800, isStackable: false, effect: () => { timePoints += 500 } },
+  { id: 'potion', name: "Time Potion (+50/click 30s)", baseCost: 900, currentCost: 900, isStackable: false, effect: () => temporaryClickBoost(50, 30000) },
+];
+
+let temporalLoop = false;
+
+// --- Initial Setup ---
+
+const upgradeList = document.getElementById('upgradeList');
+
+// Display upgrades dynamically and attach event listeners
+upgrades.forEach((u, index) => {
+  const div = document.createElement('div');
+  div.className = "upgrade";
+  const btn = document.createElement('button');
+  btn.id = `buy-${u.id}`; // Add a unique ID for easier lookup
+  
+  if (u.isStackable) {
+    btn.textContent = `${u.name} - Cost: ${u.currentCost} (Level ${u.count})`;
+  } else {
+    btn.textContent = `${u.name} - Cost: ${u.currentCost}`;
+  }
+  
+  btn.addEventListener('click', () => buyUpgrade(index));
+  div.appendChild(btn);
+  upgradeList.appendChild(div);
+});
+
+// Click button handler
+document.getElementById('clickTime').addEventListener('click', () => {
+  let gain = clickValue;
+  if(temporalLoop) gain += autoTime;
+  timePoints += gain;
+  updateDisplay();
+  checkButtonCosts();
+});
+
+
+// --- Core Game Functions ---
+
+// Buy upgrade function
+function buyUpgrade(index) {
+  const u = upgrades[index];
+  const btn = document.getElementById(`buy-${u.id}`);
+  
+  if(timePoints >= u.currentCost) {
+    timePoints -= u.currentCost;
+    u.effect(); // Apply the effect
+
+    if (u.isStackable) {
+      // Increase cost for stackable upgrades (e.g., 1.5x multiplier)
+      u.count++;
+      u.currentCost = Math.floor(u.baseCost * Math.pow(1.5, u.count));
+      btn.textContent = `${u.name} - Cost: ${u.currentCost} (Level ${u.count})`;
+    } else {
+      // Disable button for one-time purchases
+      btn.disabled = true; 
+    }
+
+    updateDisplay();
+  }
 }
 
-// Click button
-document.getElementById('clickTime').addEventListener('click', () => {
-  timePoints += clickValue;
-  updateDisplay();
-});
+// Temporary click boost function
+function temporaryClickBoost(amount, duration) {
+  // Check if boost is already active to prevent stacking exploits
+  if (document.getElementById('boostStatus')) return; 
 
-// Auto generator
-document.getElementById('autoGenerator').addEventListener('click', () => {
-  if(timePoints >= 50){
-    timePoints -= 50;
-    autoTime += 1;
-    updateDisplay();
-  }
-});
+  clickValue += amount;
+  updateDisplay();
 
-// Double click
-document.getElementById('doubleClick').addEventListener('click', () => {
-  if(timePoints >= 100){
-    timePoints -= 100;
-    clickValue = 2;
-    updateDisplay();
-  }
-});
+  // Visual cue for the boost
+  const status = document.createElement('p');
+  status.id = 'boostStatus';
+  status.textContent = `⚡ Click Boost (+${amount}) active for ${duration/1000}s!`;
+  document.getElementById('shop').prepend(status);
 
-// Time Warp
-document.getElementById('timeWarp').addEventListener('click', () => {
-  if(timePoints >= 500){
-    timePoints -= 500;
-    autoTime += 10;
-    updateDisplay();
-  }
-});
+  setTimeout(() => {
+    clickValue -= amount;
+    status.remove();
+    updateDisplay();
+  }, duration);
+}
 
 // Auto time increment every second
 setInterval(() => {
-  timePoints += autoTime;
-  updateDisplay();
+  timePoints += autoTime;
+  updateDisplay();
+  checkButtonCosts(); // Check costs every second to enable/disable buttons
 }, 1000);
+
+// Update display (Time Points, Click Value, Auto Time)
+function updateDisplay() {
+  document.getElementById('timePoints').textContent = Math.floor(timePoints);
+  document.getElementById('clickValueDisplay').textContent = clickValue;
+  document.getElementById('autoTimeDisplay').textContent = Math.floor(autoTime);
+}
+
+// Check which upgrade buttons the player can afford
+function checkButtonCosts() {
+  upgrades.forEach(u => {
+    const btn = document.getElementById(`buy-${u.id}`);
+    // Only enable if not already disabled (for one-time purchases)
+    if (btn && !btn.disabled) {
+      btn.disabled = timePoints < u.currentCost;
+    }
+  });
+}
+
+// Initial display and cost check
+updateDisplay();
+checkButtonCosts();
 </script>
 
 </body>
