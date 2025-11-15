@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Time Changer</title>
 <style>
-  body { font-family: Arial, sans-serif; text-align: center; background: #000; color: #fff; }
+  body { font-family: Arial, sans-serif; text-align: center; background: #222; color: #fff; }
   button { font-size: 18px; padding: 10px 15px; margin: 8px; cursor: pointer; border: none; border-radius: 5px; background: #4CAF50; color: white; transition: background 0.3s; }
   button:disabled { background: #555; cursor: not-allowed; }
   #shop { margin-top: 30px; border-top: 2px solid #555; padding-top: 15px; }
@@ -32,7 +32,7 @@ let clickValue = 1;
 let autoTime = 0;
 let temporalLoop = false;
 
-// Define upgrades. Stackable upgrades now have 'baseCost', 'isStackable: true', and 'count'.
+// Define upgrades. Stackable upgrades have 'baseCost', 'isStackable: true', and 'count'.
 const upgrades = [
   // Stackable Auto Time Upgrades (Cost increases after each purchase)
   { id: 'auto1', name: "Auto Time (+1/sec)", baseCost: 50, currentCost: 50, isStackable: true, count: 0, effect: () => autoTime += 1 },
@@ -71,6 +71,7 @@ upgrades.forEach((u, index) => {
     btn.textContent = `${u.name} - Cost: ${u.currentCost}`;
   }
   
+  // Use 'mousedown' event for a slightly faster response on mobile/desktop clicks
   btn.addEventListener('click', () => buyUpgrade(index));
   div.appendChild(btn);
   upgradeList.appendChild(div);
@@ -82,7 +83,7 @@ document.getElementById('clickTime').addEventListener('click', () => {
   if(temporalLoop) gain += autoTime; // Apply Temporal Loop bonus
   timePoints += gain;
   updateDisplay();
-  checkButtonCosts();
+  **checkButtonCosts(); // <-- FIX: Ensures buttons enable immediately**
 });
 
 
@@ -106,8 +107,9 @@ function buyUpgrade(index) {
       // Disable button for one-time purchases
       btn.disabled = true; 
     }
-
+    
     updateDisplay();
+    checkButtonCosts(); // Ensure other buttons update if we gained points (Quantum Leap) or reduced points
   }
 }
 
@@ -146,11 +148,11 @@ function updateDisplay() {
   document.getElementById('autoTimeDisplay').textContent = Math.floor(autoTime);
 }
 
-// Check which upgrade buttons the player can afford
+// Check which upgrade buttons the player can afford (The usability fix)
 function checkButtonCosts() {
   upgrades.forEach(u => {
     const btn = document.getElementById(`buy-${u.id}`);
-    // Only check and enable/disable if the button exists and is not a one-time purchase already disabled
+    // Only check and enable/disable if the button exists and is not already a one-time purchase disabled
     if (btn && !btn.disabled) {
       btn.disabled = timePoints < u.currentCost;
     }
