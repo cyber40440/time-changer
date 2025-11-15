@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Changer</title>
+<style>
+  body { font-family: Arial, sans-serif; text-align: center; background: #222; color: #fff; }
+  button { font-size: 20px; padding: 10px 20px; margin: 10px; cursor: pointer; }
+  #shop { margin-top: 20px; }
+  .upgrade { margin: 10px 0; }
+</style>
+</head>
+<body>
+
+<h1>Time Changer ⏳</h1>
+<p>Time Points: <span id="timePoints">0</span></p>
+<button id="clickTime">Generate Time +1</button>
+
+<div id="shop">
+  <h2>Upgrades</h2>
+  <div class="upgrade">
+    <button id="autoGenerator">Auto Time (+1/sec) - Cost: 50</button>
+  </div>
+  <div class="upgrade">
+    <button id="doubleClick">Double Click (+2 per click) - Cost: 100</button>
+  </div>
+  <div class="upgrade">
+    <button id="timeWarp">Time Warp (+10/sec) - Cost: 500</button>
+  </div>
+</div>
+
+<script>
+let timePoints = 0;
+let clickValue = 1;
+let autoTime = 0;
+
+// Update display
+function updateDisplay() {
+  document.getElementById('timePoints').textContent = timePoints;
+}
+
+// Click button
+document.getElementById('clickTime').addEventListener('click', () => {
+  timePoints += clickValue;
+  updateDisplay();
+});
+
+// Auto generator
+document.getElementById('autoGenerator').addEventListener('click', () => {
+  if(timePoints >= 50){
+    timePoints -= 50;
+    autoTime += 1;
+    updateDisplay();
+  }
+});
+
+// Double click
+document.getElementById('doubleClick').addEventListener('click', () => {
+  if(timePoints >= 100){
+    timePoints -= 100;
+    clickValue = 2;
+    updateDisplay();
+  }
+});
+
+// Time Warp
+document.getElementById('timeWarp').addEventListener('click', () => {
+  if(timePoints >= 500){
+    timePoints -= 500;
+    autoTime += 10;
+    updateDisplay();
+  }
+});
+
+// Auto time increment every second
+setInterval(() => {
+  timePoints += autoTime;
+  updateDisplay();
+}, 1000);
+</script>
+
+</body>
+</html>
